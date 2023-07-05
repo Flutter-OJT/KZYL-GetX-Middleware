@@ -1,3 +1,5 @@
+import 'package:authentications/repository/user_repository.dart';
+import 'package:authentications/screens/auth/register.dart';
 import 'package:authentications/services/login/login_service.dart';
 import 'package:authentications/services/prefs/storage_service.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +10,6 @@ class LoginScreen extends GetView<LoginService> {
 
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -32,23 +33,7 @@ class LoginScreen extends GetView<LoginService> {
                 children: [
                   const Align(
                     alignment: Alignment.center,
-                    child: Text('Login'),
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  TextFormField(
-                    controller: _nameController,
-                    keyboardType: TextInputType.name,
-                    decoration: const InputDecoration(
-                      label: Text('Name'),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Name cannot be empty!!';
-                      }
-                      return null;
-                    },
+                    child: Text('Login Here'),
                   ),
                   const SizedBox(
                     height: 16,
@@ -89,22 +74,42 @@ class LoginScreen extends GetView<LoginService> {
                     child: const Text('Login'),
                     onPressed: () async {
                       if (_formkey.currentState!.validate()) {
-                        final name = _nameController.text;
                         final email = _emailController.text;
                         final password = _passwordController.text;
 
-                        controller.authService.authenticated = true;
+                        try {
+                          final CrudUser userCrud = CrudUser();
+                          final userlist = await userCrud.list();
+                          final user = userlist!
+                              .firstWhere((user) => user.email == email);
 
-                        await storageService.storage
-                            .write(key: 'user', value: name);
-                        await storageService.storage
-                            .write(key: 'user', value: email);
-                        await storageService.storage
-                            .write(key: 'user', value: password);
-                        controller.authService.username = name;
-                        controller.authService.useremail = email;
-                        controller.authService.userpassword = password;
-                        Get.offNamed('/home');
+                          if (user.email == email &&
+                              user.password == password) {
+                            controller.authService.authenticated = true;
+
+                            await storageService.storage
+                                .write(key: 'useremail', value: email);
+                            await storageService.storage
+                                .write(key: 'userpassword', value: password);
+                            await storageService.storage
+                                .write(key: 'username', value: user.name);
+                            controller.authService.useremail = email;
+                            controller.authService.userpassword = password;
+                            controller.authService.username = user.name;
+
+                            //redirect to homescreen
+                            Get.offNamed('/home');
+                          } else {
+                            throw Exception(
+                                'Login Failed : Invalid email or invalid password');
+                          }
+                        } catch (e) {
+                          const snackBar = SnackBar(
+                              content: Text(
+                                  'Login Failed : Invalid email or invalid password'),
+                              behavior: SnackBarBehavior.floating);
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                        }
                       }
                     },
                   ),
@@ -113,7 +118,7 @@ class LoginScreen extends GetView<LoginService> {
                   ),
                   TextButton(
                       onPressed: () {
-                        // Get.to(()=> );
+                        Get.to(() => RegistrationScreen());
                       },
                       child: const Text('Register')),
                 ],
