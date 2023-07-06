@@ -17,7 +17,6 @@ class HomeScreen extends StatelessWidget {
           children: [
             Text('UserName : ${authController.username}'),
             Text('UserEmail : ${authController.useremail}'),
-            Text('UserPassword : ${authController.userpassword}'),
             ElevatedButton(
                 onPressed: () async {
                   await authController.logout();

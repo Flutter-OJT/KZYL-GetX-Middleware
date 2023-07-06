@@ -4,6 +4,8 @@ import 'package:authentications/services/login/login_service.dart';
 import 'package:authentications/services/prefs/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class LoginScreen extends GetView<LoginService> {
   LoginScreen({Key? key}) : super(key: key);
@@ -16,6 +18,7 @@ class LoginScreen extends GetView<LoginService> {
   @override
   Widget build(BuildContext context) {
     final storageService = Get.find<StorageService>();
+    final loginService = Get.find<LoginService>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
@@ -54,18 +57,32 @@ class LoginScreen extends GetView<LoginService> {
                   const SizedBox(
                     height: 16,
                   ),
-                  TextFormField(
-                    controller: _passwordController,
-                    keyboardType: TextInputType.visiblePassword,
-                    decoration: const InputDecoration(
-                      label: Text('Password'),
+                  Obx(
+                    () => TextFormField(
+                      controller: _passwordController,
+                      keyboardType: TextInputType.visiblePassword,
+                      obscureText: !loginService.passwordVisible,
+                      decoration: InputDecoration(
+                        label: const Text('Password'),
+                        suffixIcon: GestureDetector(
+                          onTap: () {
+                            loginService.passwordVisible =
+                                !loginService.passwordVisible;
+                          },
+                          child: Icon(
+                            loginService.passwordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Password cannot be empty!!';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Password cannot be empty!!';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(
                     height: 16,
@@ -73,9 +90,12 @@ class LoginScreen extends GetView<LoginService> {
                   ElevatedButton(
                     child: const Text('Login'),
                     onPressed: () async {
+                      var bytes = utf8.encode(_passwordController.text);
+                      var encryptedPassword = sha1.convert(bytes).toString();
+
                       if (_formkey.currentState!.validate()) {
                         final email = _emailController.text;
-                        final password = _passwordController.text;
+                        final password = encryptedPassword;
 
                         try {
                           final CrudUser userCrud = CrudUser();

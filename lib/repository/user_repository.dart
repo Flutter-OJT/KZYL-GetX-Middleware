@@ -12,8 +12,7 @@ class CrudUser extends CRUDModel<UserModel> {
       role VARCHAR(100),
       name VARCHAR(100),
       email VARCHAR(100),
-      password VARCHAR(100)
-      
+      password TEXT
     )
     ''';
   }
